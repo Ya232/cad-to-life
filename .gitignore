@@ -157,6 +157,10 @@ ENV/
 env.bak/
 venv.bak/
 
+# Frontend build output
+.next/
+node_modules/
+
 # Spyder project settings
 .spyderproject
 .spyproject
