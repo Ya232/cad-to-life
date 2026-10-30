@@ -1,6 +1,6 @@
 import { FormEvent, useState } from "react";
 import { labels, Language } from "../i18n";
-import { analyzeDesign, Project } from "../lib/api";
+import { analyzeDesign, AnalyzeResponse, Project } from "../lib/api";
 import { ResultCard } from "./ResultCard";
 
 export function ChatPanel({
@@ -18,8 +18,12 @@ export function ChatPanel({
   const [message, setMessage] = useState("");
   const [isAnalyzing, setIsAnalyzing] = useState(false);
   const [messages, setMessages] = useState<{ role: "assistant" | "user"; text: string }[]>([]);
+  const [questions, setQuestions] = useState<AnalyzeResponse & { status: "needs_clarification" } | null>(null);
+  const [spec, setSpec] = useState<AnalyzeResponse & { status: "ready" } | null>(null);
+  const [lastDescription, setLastDescription] = useState("");
+  const [answers, setAnswers] = useState<Record<string, string>>({});
 
-  async function sendMessage(text: string) {
+  async function sendMessage(text: string, nextAnswers: Record<string, string> | null = null) {
     const trimmed = text.trim();
     if (!trimmed || isAnalyzing) return;
     setMessages((current) => [...current, { role: "user", text: trimmed }]);
@@ -34,7 +38,16 @@ export function ChatPanel({
     }
 
     try {
-      await analyzeDesign(apiUrl, trimmed, language);
+      const response = await analyzeDesign(apiUrl, trimmed, language, nextAnswers);
+      setQuestions(response.status === "needs_clarification" ? response : null);
+      setSpec(response.status === "ready" ? response : null);
+      setLastDescription(trimmed);
+      if (response.status === "ready") {
+        setMessages((current) => [
+          ...current,
+          { role: "assistant", text: copy.readyTitle },
+        ]);
+      }
     } catch (error) {
       const text =
         error instanceof Error && error.message === "meta_not_connected"
@@ -44,6 +57,15 @@ export function ChatPanel({
       onError(text);
     } finally {
       setIsAnalyzing(false);
+    }
+
+  }
+
+  async function answerQuestion(questionId: string, option: string) {
+    const nextAnswers = { ...answers, [questionId]: option };
+    setAnswers(nextAnswers);
+    if (lastDescription) {
+      await sendMessage(lastDescription, nextAnswers);
     }
   }
 
@@ -72,6 +94,43 @@ export function ChatPanel({
             <p>{item.text}</p>
           </div>
         ))}
+        {questions && (
+          <div className="question-card">
+            {questions.questions.map((question) => (
+              <div className="question-block" key={question.id}>
+                <strong>{question.text}</strong>
+                <div className="question-options">
+                  {question.options.map((option) => (
+                    <button
+                      key={option}
+                      onClick={() => void answerQuestion(question.id, option)}
+                      disabled={isAnalyzing}
+                    >
+                      {option}
+                    </button>
+                  ))}
+                </div>
+              </div>
+            ))}
+          </div>
+        )}
+        {spec && (
+          <article className="spec-card">
+            <strong>{copy.readyTitle}: {spec.spec.name}</strong>
+            <p>{spec.spec.part_type}</p>
+            <strong>{copy.components}</strong>
+            <ul>
+              {spec.spec.components.map((component) => (
+                <li key={component.query}>{component.query}</li>
+              ))}
+            </ul>
+            <strong>{copy.constraints}</strong>
+            <p>{spec.spec.constraints.notes || spec.spec.constraints.mounting}</p>
+            <button className="primary" disabled title={copy.generateDisabled}>
+              {copy.generateDisabled}
+            </button>
+          </article>
+        )}
         <ResultCard language={language} project={project} />
       </div>
       <div className="suggestions">

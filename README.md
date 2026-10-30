@@ -10,13 +10,15 @@ deliver an STL with a certificate.
 
 | Implemented | In progress | Planned |
 | --- | --- | --- |
-| Next.js chat workspace | Meta Model API analysis | Verified component library |
-| FastAPI health, preview, and in-memory project endpoints | Honest disconnected AI state | Deterministic CAD and STL export |
-| FR/EN shell and collapsible history | Backend/frontend module structure | Verification loop and certificate |
-| Basic dimension warnings |  | SQLite persistence and datasheet import |
+| Next.js chat workspace | Deterministic CAD and STL export | Datasheet import |
+| FastAPI health, preview, in-memory project, analysis, and component endpoints | Component library with explicit source metadata | Deterministic CAD and STL export |
+| FR/EN shell and collapsible history | Analysis clarification flow | Verification loop and certificate |
+| Basic dimension warnings and fuzzy component matching |  | SQLite persistence and datasheet import |
 
 The current application does not claim to generate CAD or verify printability.
 Those capabilities will only be exposed after they are implemented and tested.
+Design analysis returns either clarification questions or a structured
+specification from the Meta Model API.
 
 ## Architecture
 
@@ -56,24 +58,37 @@ Copy `backend/.env.example` to `backend/.env` and set:
 
 - `META_MODEL_API_KEY`
 - `META_MODEL_API_BASE_URL`
+- `META_MODEL_NAME` (defaults to `muse-spark-1.1`)
+- `META_MAX_CALLS_PER_PROJECT` (defaults to `12`)
 - `ALLOWED_ORIGINS` (optional, comma-separated)
 
 Never commit `backend/.env`.
 
 ## Libraries
 
-- Python: FastAPI, Uvicorn, Pydantic, python-dotenv
+- Python: FastAPI, Uvicorn, Pydantic, python-dotenv, OpenAI, rapidfuzz
 - Frontend: Next.js, React, TypeScript
 
 ## Meta models
 
-No Meta model call is implemented in the current phase. The planned integration
-uses the OpenAI-compatible Meta Model API with a configurable Muse Spark model.
+The analysis endpoint uses the OpenAI-compatible Meta Model API with a
+configurable Muse Spark model:
+
+```text
+POST /api/designs/analyze
+```
+
+To make one real request for key validation:
+
+```powershell
+cd backend
+.\.venv\Scripts\python.exe -m scripts.smoke_meta
+```
 
 ## Known limitations
 
-- Design analysis is not connected yet.
-- Component dimensions are not grounded in a verified library.
+- The seed component record is explicitly unverified and must be replaced or
+  confirmed against the exact manufacturer drawing before CAD generation.
 - No CAD geometry, STL export, verification certificate, or persistent database
   exists yet.
 - Project history currently lives only in the API process.

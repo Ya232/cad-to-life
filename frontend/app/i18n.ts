@@ -27,6 +27,10 @@ export const labels = {
     placeholderResult: "Le résultat 3D apparaîtra ici après une vraie génération.",
     designing: "Analyse en cours...",
     footer: "CAD-to-Life peut faire des erreurs. Vérifie toujours les cotes.",
+    generateDisabled: "La génération 3D sera disponible à la prochaine phase.",
+    readyTitle: "Spécification prête",
+    components: "Composants",
+    constraints: "Contraintes",
   },
   en: {
     eyebrow: "Parametric design assistant",
@@ -54,5 +58,9 @@ export const labels = {
     placeholderResult: "The 3D result will appear here after a real generation.",
     designing: "Analysing...",
     footer: "CAD-to-Life can make mistakes. Always verify dimensions.",
+    generateDisabled: "3D generation will be enabled in the next phase.",
+    readyTitle: "Specification ready",
+    components: "Components",
+    constraints: "Constraints",
   },
 } as const;

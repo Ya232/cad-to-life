@@ -1,0 +1,32 @@
+[
+  {
+    "id": "esp32-devkitc-v4-example",
+    "name": "ESP32-DevKitC V4 (example record)",
+    "category": "mcu_board",
+    "manufacturer": "Espressif",
+    "dimensions_mm": {
+      "length": 54.2,
+      "width": 27.9,
+      "height": 3.5
+    },
+    "mounting_holes": [],
+    "ports": [
+      {
+        "name": "USB",
+        "type": "micro-usb",
+        "side": "front",
+        "offset_mm": 0,
+        "width_mm": 7,
+        "height_mm": 4
+      }
+    ],
+    "source": {
+      "url": "https://docs.espressif.com/projects/esp-dev-kits/en/latest/esp32/esp32-devkitc/user_guide.html",
+      "document": "ESP32-DevKitC V4 User Guide",
+      "page": "Overview"
+    },
+    "verified": false,
+    "verified_by": null,
+    "notes": "EXAMPLE ONLY - replace with datasheet values. Length and width require confirmation against the exact board revision; height is not verified."
+  }
+]
