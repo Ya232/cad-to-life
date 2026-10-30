@@ -1,57 +1,86 @@
 # CAD-to-Life
 
-CAD-to-Life is an AI-assisted parametric design workspace for electronic and
-mechanical parts. A user describes a project, imports a component datasheet or
-sketch, and receives a verifiable design ready for 3D printing.
+CAD-to-Life is an AI-assisted workspace for turning a plain-language electronics
+or mechanical project into a grounded, parametric, 3D-printable part. The
+planned workflow is: understand the request, ground component dimensions in
+manufacturer datasheets, generate deterministic geometry, verify it, and
+deliver an STL with a certificate.
 
-The MVP covers several reusable part families:
+## Status
 
-- enclosures
-- brackets and supports
-- mounting plates
-- spacers
+| Implemented | In progress | Planned |
+| --- | --- | --- |
+| Next.js chat workspace | Meta Model API analysis | Verified component library |
+| FastAPI health, preview, and in-memory project endpoints | Honest disconnected AI state | Deterministic CAD and STL export |
+| FR/EN shell and collapsible history | Backend/frontend module structure | Verification loop and certificate |
+| Basic dimension warnings |  | SQLite persistence and datasheet import |
 
-Planned capabilities include datasheet dimension extraction, component
-libraries with manufacturer sources, STL export, printable-design checks,
-saved project history, and French/English interfaces.
+The current application does not claim to generate CAD or verify printability.
+Those capabilities will only be exposed after they are implemented and tested.
+
+## Architecture
+
+```text
+frontend/  Next.js interface and chat workspace
+backend/   FastAPI API, Pydantic models, and design services
+```
+
+The frontend calls the backend over HTTP. The Meta API key belongs only in the
+backend environment and is never sent to the browser.
+
+## Run locally
+
+Backend:
+
+```powershell
+cd backend
+python -m venv .venv
+.\.venv\Scripts\python.exe -m pip install -r requirements.txt
+.\.venv\Scripts\python.exe -m uvicorn app.main:app --host 127.0.0.1 --port 8000 --reload
+```
+
+Frontend:
+
+```powershell
+cd frontend
+npm install
+npm run dev
+```
+
+If port 8000 is unavailable, run the backend on port 8001. The frontend tries
+both ports automatically.
+
+## Environment variables
+
+Copy `backend/.env.example` to `backend/.env` and set:
+
+- `META_MODEL_API_KEY`
+- `META_MODEL_API_BASE_URL`
+- `ALLOWED_ORIGINS` (optional, comma-separated)
+
+Never commit `backend/.env`.
+
+## Libraries
+
+- Python: FastAPI, Uvicorn, Pydantic, python-dotenv
+- Frontend: Next.js, React, TypeScript
+
+## Meta models
+
+No Meta model call is implemented in the current phase. The planned integration
+uses the OpenAI-compatible Meta Model API with a configurable Muse Spark model.
+
+## Known limitations
+
+- Design analysis is not connected yet.
+- Component dimensions are not grounded in a verified library.
+- No CAD geometry, STL export, verification certificate, or persistent database
+  exists yet.
+- Project history currently lives only in the API process.
+
+## License
+
+See [LICENSE](LICENSE).
 
 Everything in this repository was written during the Meta Global AI Developer
 Hackathon (Oct 26-Nov 4, 2026).
-
-## Development
-
-The project uses a Next.js frontend and a FastAPI backend.
-
-```text
-frontend/  Web interface
-backend/   API and parametric design domain
-```
-
-The first vertical slice is intentionally dependency-light: it creates a
-project, previews a parametric part specification, and stores project history
-in the API process. Persistent storage, CAD generation, and Meta model
-integration will be added next.
-
-## Meta Model API key
-
-The key must stay in the backend environment and must never be placed in
-frontend code or committed to Git.
-
-```powershell
-cd "C:\Users\HP 3PRO\cad-to-life\backend"
-Copy-Item .env.example .env
-notepad .env
-```
-
-Replace `replace_with_your_meta_model_api_key` with the key from the Meta Model
-API dashboard. The backend exposes only its configuration status at
-`http://localhost:8000/api/meta/status`; it never returns the key.
-
-If port 8000 is blocked on your machine, run the backend on a free port instead:
-
-```powershell
-cd "C:\Users\HP 3PRO\cad-to-life\backend"
-.\.venv\Scripts\python.exe -m uvicorn app.main:app --host 127.0.0.1 --port 8001 --reload
-```
-
-The frontend automatically tries `localhost:8000` and `localhost:8001` before failing.

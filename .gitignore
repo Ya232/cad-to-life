@@ -160,6 +160,12 @@ venv.bak/
 # Frontend build output
 .next/
 node_modules/
+frontend/.next/
+
+# Runtime data and generated files
+backend/data/
+backend/uploads/
+backend/output/*.stl
 
 # Spyder project settings
 .spyderproject
