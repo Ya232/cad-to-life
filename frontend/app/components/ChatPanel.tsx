@@ -1,6 +1,6 @@
 import { FormEvent, useState } from "react";
 import { labels, Language } from "../i18n";
-import { analyzeDesign, AnalyzeResponse, Project } from "../lib/api";
+import { analyzeDesign, AnalyzeResponse, generateDesign, GenerateResult, Project } from "../lib/api";
 import { ResultCard } from "./ResultCard";
 
 export function ChatPanel({
@@ -22,6 +22,7 @@ export function ChatPanel({
   const [spec, setSpec] = useState<AnalyzeResponse & { status: "ready" } | null>(null);
   const [lastDescription, setLastDescription] = useState("");
   const [answers, setAnswers] = useState<Record<string, string>>({});
+  const [generated, setGenerated] = useState<GenerateResult | null>(null);
 
   async function sendMessage(text: string, nextAnswers: Record<string, string> | null = null) {
     const trimmed = text.trim();
@@ -66,6 +67,19 @@ export function ChatPanel({
     setAnswers(nextAnswers);
     if (lastDescription) {
       await sendMessage(lastDescription, nextAnswers);
+    }
+  }
+
+  async function generate() {
+    if (!apiUrl || !spec || isAnalyzing) return;
+    setIsAnalyzing(true);
+    onError("");
+    try {
+      setGenerated(await generateDesign(apiUrl, spec.spec));
+    } catch {
+      onError(copy.backendUnavailable);
+    } finally {
+      setIsAnalyzing(false);
     }
   }
 
@@ -126,9 +140,25 @@ export function ChatPanel({
             </ul>
             <strong>{copy.constraints}</strong>
             <p>{spec.spec.constraints.notes || spec.spec.constraints.mounting}</p>
-            <button className="primary" disabled title={copy.generateDisabled}>
-              {copy.generateDisabled}
+            <button className="primary" onClick={() => void generate()} disabled={isAnalyzing || !apiUrl}>
+              {language === "fr" ? "Générer le STL" : "Generate STL"}
             </button>
+          </article>
+        )}
+        {generated && (
+          <article className="spec-card">
+            <strong>{language === "fr" ? "STL généré" : "STL generated"}</strong>
+            <p>
+              {generated.bounding_box_mm.join(" × ")} mm
+            </p>
+            {generated.warnings.map((warning) => <p className="status" key={warning}>{warning}</p>)}
+            <a
+              className="primary download-link"
+              href={`${apiUrl}${generated.files.stl_url}`}
+              download
+            >
+              {language === "fr" ? "Télécharger le STL" : "Download STL"}
+            </a>
           </article>
         )}
         <ResultCard language={language} project={project} />

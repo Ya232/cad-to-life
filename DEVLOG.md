@@ -15,9 +15,13 @@
   component endpoints, and a searchable frontend library panel.
 - Added one explicitly unverified ESP32 example record with a manufacturer
   source link; no component is treated as verified yet.
+- Added deterministic STL generation for enclosures, plates, brackets, and
+  spacers, with bounding-box output and download endpoint.
+- CadQuery installation was impractical on Windows/Python 3.14, so the MVP
+  uses `trimesh` and documents this limitation.
 - Cleaned the frontend architecture and removed the local keyword/regex "AI" inference.
 - Added an honest disconnected state until the Meta Model API analysis endpoint exists.
 - Split the FastAPI models, routes, and preview service.
 - Added the first backend health test.
-- Still missing: verified component records, deterministic CAD generation,
-  verification, and persistence.
+- Still missing: verified component records, robust port cutouts, verification,
+  and persistence.

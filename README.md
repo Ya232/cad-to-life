@@ -10,8 +10,8 @@ deliver an STL with a certificate.
 
 | Implemented | In progress | Planned |
 | --- | --- | --- |
-| Next.js chat workspace | Deterministic CAD and STL export | Datasheet import |
-| FastAPI health, preview, in-memory project, analysis, and component endpoints | Component library with explicit source metadata | Deterministic CAD and STL export |
+| Next.js chat workspace, deterministic STL export, and download flow | Robust CAD cutouts and verification | Datasheet import |
+| FastAPI health, preview, in-memory project, analysis, component, and generation endpoints | Component library with explicit source metadata | Verification loop and certificate |
 | FR/EN shell and collapsible history | Analysis clarification flow | Verification loop and certificate |
 | Basic dimension warnings and fuzzy component matching |  | SQLite persistence and datasheet import |
 
@@ -89,8 +89,10 @@ cd backend
 
 - The seed component record is explicitly unverified and must be replaced or
   confirmed against the exact manufacturer drawing before CAD generation.
-- No CAD geometry, STL export, verification certificate, or persistent database
-  exists yet.
+- The current generator uses deterministic triangle meshes with `trimesh` for
+  the Windows/Python 3.14 MVP. CadQuery was not adopted because its native
+  dependency install was impractical in this environment.
+- No verification certificate or persistent database exists yet.
 - Project history currently lives only in the API process.
 
 ## License

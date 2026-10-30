@@ -123,6 +123,8 @@ h2 { font-size: 28px; letter-spacing: -.04em; }
 .spec-card p { margin: 0; color: var(--muted); }
 .spec-card ul { margin: 0 0 4px; padding-left: 20px; color: var(--muted); }
 .spec-card .primary { cursor: not-allowed; opacity: .6; }
+.spec-card button.primary { cursor: pointer; opacity: 1; }
+.download-link { display: inline-block; text-align: center; text-decoration: none; }
 .library-overlay { position: fixed; inset: 0; z-index: 4; display: grid; place-items: center; padding: 24px; background: rgba(15,23,42,.35); }
 .library-panel { width: min(900px, 100%); max-height: 85vh; overflow: auto; padding: 24px; border: 1px solid var(--line); border-radius: 22px; background: #fff; box-shadow: var(--shadow); }
 .library-heading { display: flex; justify-content: space-between; align-items: start; }

@@ -80,3 +80,16 @@ class AnalyzeRequest(BaseModel):
     description: str = Field(min_length=1, max_length=4000)
     language: Literal["fr", "en"] = "en"
     answers: dict[str, str] | None = None
+
+
+class GenerateRequest(BaseModel):
+    spec: DesignSpec
+    project_id: str | None = Field(default=None, pattern=r"^[a-zA-Z0-9_-]+$")
+
+
+class GenerateResult(BaseModel):
+    project_id: str
+    files: dict[str, str]
+    bounding_box_mm: tuple[float, float, float]
+    parameters_used: dict[str, float]
+    warnings: list[str]
