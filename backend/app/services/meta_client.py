@@ -4,13 +4,14 @@ import logging
 import os
 import time
 from collections import defaultdict
+from pathlib import Path
 from typing import Any
 
 from dotenv import load_dotenv
 from openai import OpenAI
 
 logger = logging.getLogger(__name__)
-load_dotenv()
+load_dotenv(Path(__file__).resolve().parents[2] / ".env")
 
 
 class MetaClientError(RuntimeError):
