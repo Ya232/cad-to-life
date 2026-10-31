@@ -58,13 +58,14 @@ class MetaClient:
 
         client = self._client()
         validation_error = ""
-        for attempt in range(3):
+        for attempt in range(4):
             prompt = user
             if validation_error:
                 prompt = (
                     f"{user}\n\nYour previous response was invalid JSON: "
                     f"{validation_error}. Return one concise JSON object only. "
-                    "Ask at most one question. Return compact JSON without markdown."
+                    "Ask at most one question. Return compact JSON without markdown. "
+                    "Do not add commentary, code fences, or trailing text."
                 )
             started = time.perf_counter()
             self._calls[project_id] += 1
@@ -101,8 +102,8 @@ class MetaClient:
                     attempt + 1,
                     validation_error,
                 )
-                if attempt == 2:
-                    raise MetaClientError("Meta returned invalid JSON after three attempts.") from exc
+                if attempt == 3:
+                    raise MetaClientError("Meta returned invalid JSON after four attempts.") from exc
             except Exception as exc:
                 raise MetaClientError("Meta Model API request failed.") from exc
         raise MetaClientError("Meta Model API request failed.")
