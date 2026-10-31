@@ -9,19 +9,7 @@ export function ResultCard({
   project: Project | null;
 }) {
   const copy = labels[language];
-  if (!project) {
-    return (
-      <article className="design-result placeholder-result">
-        <div className="result-heading">
-          <span className="result-icon">·</span>
-          <div>
-            <strong>{copy.selectedProject}</strong>
-            <span>{copy.placeholderResult}</span>
-          </div>
-        </div>
-      </article>
-    );
-  }
+  if (!project) return null;
 
   return (
     <article className="design-result">

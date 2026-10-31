@@ -24,7 +24,6 @@ export const labels = {
     backendUnavailable:
       "Le backend n’est pas disponible. Lance le serveur FastAPI sur le port 8000 ou 8001.",
     selectedProject: "Projet sélectionné",
-    placeholderResult: "Le résultat 3D apparaîtra ici après une vraie génération.",
     designing: "Analyse en cours...",
     footer: "CAD-to-Life peut faire des erreurs. Vérifie toujours les cotes.",
     generateDisabled: "La génération 3D sera disponible à la prochaine phase.",
@@ -55,7 +54,6 @@ export const labels = {
     backendUnavailable:
       "The backend is not available. Start the FastAPI server on port 8000 or 8001.",
     selectedProject: "Selected project",
-    placeholderResult: "The 3D result will appear here after a real generation.",
     designing: "Analysing...",
     footer: "CAD-to-Life can make mistakes. Always verify dimensions.",
     generateDisabled: "3D generation will be enabled in the next phase.",
