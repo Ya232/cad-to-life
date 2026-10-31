@@ -92,3 +92,32 @@ def test_generation_rejects_max_size_smaller_than_component() -> None:
         },
     )
     assert response.status_code == 422
+
+
+def test_usb_access_creates_cutout_parameters() -> None:
+    client = TestClient(app)
+    response = client.post(
+        "/api/designs/generate",
+        json={
+            "project_id": "test-usb-cutout",
+            "spec": {
+                "part_type": "enclosure",
+                "name": "USB enclosure",
+                "components": [
+                    {
+                        "query": "ESP32",
+                        "library_id": "esp32-devkitc-v4-example",
+                        "confidence": 1,
+                    }
+                ],
+                "constraints": {"usb_access": True},
+                "parameters": {},
+                "language": "en",
+            },
+        },
+    )
+    assert response.status_code == 200
+    body = response.json()
+    assert body["parameters_used"]["usb_cutout_width_mm"] == 9.0
+    assert body["parameters_used"]["usb_cutout_height_mm"] == 6.0
+    assert not any("not implemented" in warning for warning in body["warnings"])

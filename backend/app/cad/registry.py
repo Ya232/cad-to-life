@@ -41,6 +41,51 @@ def _component_warnings(spec: DesignSpec) -> list[str]:
     return warnings
 
 
+def _front_wall(
+    outer: tuple[float, float, float],
+    wall: float,
+    floor: float,
+    port_width: float | None = None,
+    port_height: float | None = None,
+) -> list[trimesh.Trimesh]:
+    outer_x, outer_y, outer_z = outer
+    wall_height = outer_z - floor
+    if not port_width or not port_height:
+        return [_box((outer_x - 2 * wall, wall, wall_height), (outer_x / 2, wall / 2, floor + wall_height / 2))]
+
+    opening_width = min(port_width + 2.0, outer_x - 4 * wall)
+    opening_height = min(port_height + 2.0, wall_height - 2 * wall)
+    opening_left = (outer_x - opening_width) / 2
+    opening_bottom = floor + (wall_height - opening_height) / 2
+    pieces: list[trimesh.Trimesh] = []
+    if opening_left > 0:
+        pieces.append(_box((opening_left, wall, wall_height), (opening_left / 2, wall / 2, floor + wall_height / 2)))
+    right_width = outer_x - wall - (opening_left + opening_width)
+    if right_width > 0:
+        pieces.append(
+            _box(
+                (right_width, wall, wall_height),
+                (opening_left + opening_width + right_width / 2, wall / 2, floor + wall_height / 2),
+            )
+        )
+    if opening_height < wall_height:
+        pieces.append(
+            _box(
+                (opening_width, wall, opening_bottom - floor),
+                (opening_left + opening_width / 2, wall / 2, floor + (opening_bottom - floor) / 2),
+            )
+        )
+        top_height = outer_z - (opening_bottom + opening_height)
+        if top_height > 0:
+            pieces.append(
+                _box(
+                    (opening_width, wall, top_height),
+                    (opening_left + opening_width / 2, wall / 2, opening_bottom + opening_height + top_height / 2),
+                )
+            )
+    return pieces
+
+
 def _enclosure(spec: DesignSpec) -> tuple[list[trimesh.Trimesh], dict[str, float], tuple[float, float, float]]:
     wall = float(spec.parameters.get("wall_thickness_mm", 2.0))
     floor = float(spec.parameters.get("floor_thickness_mm", 2.0))
@@ -57,7 +102,7 @@ def _enclosure(spec: DesignSpec) -> tuple[list[trimesh.Trimesh], dict[str, float
     if components:
         inner_x = max(component.dimensions_mm.length + 2 * clearance for component in components)
         inner_y = sum(component.dimensions_mm.width + 2 * clearance for component in components)
-        inner_z = max(component.dimensions_mm.height for component in components) + clearance
+        inner_z = max(30.0, max(component.dimensions_mm.height for component in components) + clearance)
     else:
         inner_x, inner_y, inner_z = 80.0, 50.0, 30.0
     if spec.constraints.max_size_mm:
@@ -70,18 +115,37 @@ def _enclosure(spec: DesignSpec) -> tuple[list[trimesh.Trimesh], dict[str, float
 
     outer = (inner_x + 2 * wall, inner_y + 2 * wall, inner_z + floor)
     height = outer[2]
+    usb_port = next(
+        (
+            port
+            for component in components
+            for port in component.ports
+            if port.type.lower() in {"usb", "micro-usb", "usb-c"}
+        ),
+        None,
+    )
     meshes = [
         _box((outer[0], outer[1], floor), (outer[0] / 2, outer[1] / 2, floor / 2)),
         _box((wall, outer[1], height - floor), (wall / 2, outer[1] / 2, floor + (height - floor) / 2)),
         _box((wall, outer[1], height - floor), (outer[0] - wall / 2, outer[1] / 2, floor + (height - floor) / 2)),
-        _box((outer[0] - 2 * wall, wall, height - floor), (outer[0] / 2, wall / 2, floor + (height - floor) / 2)),
+        *_front_wall(
+            outer,
+            wall,
+            floor,
+            usb_port.width_mm if spec.constraints.usb_access and usb_port else None,
+            usb_port.height_mm if spec.constraints.usb_access and usb_port else None,
+        ),
         _box((outer[0] - 2 * wall, wall, height - floor), (outer[0] / 2, outer[1] - wall / 2, floor + (height - floor) / 2)),
     ]
-    return meshes, {
+    parameters = {
         "wall_thickness_mm": wall,
         "floor_thickness_mm": floor,
         "clearance_mm": clearance,
-    }, outer
+    }
+    if usb_port and spec.constraints.usb_access:
+        parameters["usb_cutout_width_mm"] = min(usb_port.width_mm + 2.0, outer[0] - 4 * wall)
+        parameters["usb_cutout_height_mm"] = min(usb_port.height_mm + 2.0, height - floor - 2 * wall)
+    return meshes, parameters, outer
 
 
 def _simple_part(spec: DesignSpec) -> tuple[list[trimesh.Trimesh], dict[str, float], tuple[float, float, float]]:
@@ -129,7 +193,17 @@ def generate_part(spec: DesignSpec, project_id: str | None = None) -> GeneratedP
     combined.export(path)
     warnings = _component_warnings(spec)
     if spec.part_type == PartType.enclosure and spec.constraints.usb_access:
-        warnings.append("USB access is requested but port cutouts are not implemented yet.")
+        has_usb_port = any(
+            component_store.get(reference.library_id)
+            and any(
+                port.type.lower() in {"usb", "micro-usb", "usb-c"}
+                for port in component_store.get(reference.library_id).ports
+            )
+            for reference in spec.components
+            if reference.library_id
+        )
+        if not has_usb_port:
+            warnings.append("USB access was requested but no USB port is available in the component library.")
     if spec.part_type == PartType.enclosure and spec.constraints.waterproof:
         warnings.append("Waterproofing is requested but the current enclosure is open-top.")
     return GeneratedPart(
