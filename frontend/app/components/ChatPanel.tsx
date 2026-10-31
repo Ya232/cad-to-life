@@ -2,6 +2,7 @@ import { FormEvent, useState } from "react";
 import { labels, Language } from "../i18n";
 import { analyzeDesign, AnalyzeResponse, generateDesign, GenerateResult, Project } from "../lib/api";
 import { ResultCard } from "./ResultCard";
+import { StlViewer } from "./StlViewer";
 
 export function ChatPanel({
   language,
@@ -155,6 +156,7 @@ export function ChatPanel({
         {generated && (
           <article className="spec-card">
             <strong>{language === "fr" ? "STL généré" : "STL generated"}</strong>
+            {apiUrl && <StlViewer url={`${apiUrl}${generated.files.stl_url}`} />}
             <p>
               {generated.bounding_box_mm.join(" × ")} mm
             </p>
