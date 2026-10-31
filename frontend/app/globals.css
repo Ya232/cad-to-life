@@ -51,7 +51,8 @@ h2 { font-size: 28px; letter-spacing: -.04em; }
 .status { color: #a35b22; font-size: 12px; font-weight: 700; }
 .status.good { color: #4f7e28; }
 .error { color: #a33a32; font-size: 13px; }
-.chat-layout { flex: 1; min-height: calc(100vh - 76px); display: grid; grid-template-columns: 232px minmax(0, 1fr); gap: 14px; align-items: stretch; }
+.chat-layout { flex: 1; min-height: calc(100vh - 76px); display: grid; grid-template-columns: 232px minmax(0, 1fr); gap: 14px; align-items: stretch; transition: grid-template-columns .24s ease; }
+.chat-layout:has(.history-sidebar.collapsed) { grid-template-columns: 52px minmax(0, 1fr); }
 .history-sidebar { min-height: 0; background: rgba(255,255,255,0.5); border: 1px solid var(--line); border-radius: 22px; padding: 18px 12px 18px 0; overflow-y: auto; box-shadow: var(--shadow); backdrop-filter: blur(16px); }
 .history-sidebar.collapsed { width: 52px; padding-right: 0; }
 .history-sidebar-heading { display: flex; justify-content: space-between; align-items: center; min-height: 34px; padding-left: 14px; }
