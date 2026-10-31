@@ -43,7 +43,7 @@ class MetaClient:
         user: str,
         *,
         project_id: str,
-        max_tokens: int = 900,
+        max_tokens: int = 1200,
     ) -> dict[str, Any]:
         cache_key = hashlib.sha256(
             json.dumps(
@@ -63,7 +63,8 @@ class MetaClient:
             if validation_error:
                 prompt = (
                     f"{user}\n\nYour previous response was invalid JSON: "
-                    f"{validation_error}. Return only valid JSON."
+                    f"{validation_error}. Return one concise JSON object only. "
+                    "Ask at most one question and do not include markdown."
                 )
             started = time.perf_counter()
             self._calls[project_id] += 1
@@ -77,6 +78,9 @@ class MetaClient:
                     max_tokens=max_tokens,
                 )
                 content = response.choices[0].message.content or ""
+                finish_reason = getattr(response.choices[0], "finish_reason", None)
+                if finish_reason == "length":
+                    raise ValueError("The Meta response was truncated before completing JSON.")
                 parsed = self._parse_json(content)
                 if not isinstance(parsed, dict):
                     raise ValueError("The response must be a JSON object.")
