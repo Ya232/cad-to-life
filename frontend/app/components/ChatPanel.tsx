@@ -23,6 +23,7 @@ export function ChatPanel({
   const [lastDescription, setLastDescription] = useState("");
   const [answers, setAnswers] = useState<Record<string, string>>({});
   const [generated, setGenerated] = useState<GenerateResult | null>(null);
+  const [workingMode, setWorkingMode] = useState<"analysis" | "generation" | null>(null);
 
   async function sendMessage(text: string, nextAnswers: Record<string, string> | null = null) {
     const trimmed = text.trim();
@@ -30,6 +31,7 @@ export function ChatPanel({
     setMessages((current) => [...current, { role: "user", text: trimmed }]);
     setMessage("");
     setIsAnalyzing(true);
+    setWorkingMode("analysis");
     onError("");
 
     if (!apiUrl) {
@@ -58,8 +60,8 @@ export function ChatPanel({
       onError(text);
     } finally {
       setIsAnalyzing(false);
+      setWorkingMode(null);
     }
-
   }
 
   async function answerQuestion(questionId: string, option: string) {
@@ -73,6 +75,7 @@ export function ChatPanel({
   async function generate() {
     if (!apiUrl || !spec || isAnalyzing) return;
     setIsAnalyzing(true);
+    setWorkingMode("generation");
     onError("");
     try {
       setGenerated(await generateDesign(apiUrl, spec.spec));
@@ -80,6 +83,7 @@ export function ChatPanel({
       onError(copy.backendUnavailable);
     } finally {
       setIsAnalyzing(false);
+      setWorkingMode(null);
     }
   }
 
@@ -180,7 +184,17 @@ export function ChatPanel({
         />
         <button type="submit" aria-label={copy.send} disabled={isAnalyzing}>↑</button>
       </form>
-      {isAnalyzing && <p className="designing-status">{copy.designing}</p>}
+      {isAnalyzing && (
+        <div className="thinking-indicator" role="status" aria-live="polite">
+          <span className="thinking-orb" aria-hidden="true">✦</span>
+          <span>
+            {workingMode === "generation"
+              ? (language === "fr" ? "Je prépare la géométrie 3D" : "Preparing the 3D geometry")
+              : (language === "fr" ? "J’analyse votre demande" : "Analysing your request")}
+          </span>
+          <span className="thinking-dots" aria-hidden="true"><i /><i /><i /></span>
+        </div>
+      )}
       <small className="composer-note">{copy.footer}</small>
     </div>
   );
