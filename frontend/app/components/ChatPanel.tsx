@@ -114,22 +114,21 @@ export function ChatPanel({
         ))}
         {questions && (
           <div className="question-card">
-            {questions.questions.map((question) => (
-              <div className="question-block" key={question.id}>
-                <strong>{question.text}</strong>
-                <div className="question-options">
-                  {question.options.map((option) => (
-                    <button
-                      key={option}
-                      onClick={() => void answerQuestion(question.id, option)}
-                      disabled={isAnalyzing}
-                    >
-                      {option}
-                    </button>
-                  ))}
-                </div>
+            <div className="question-block">
+              <span className="question-kicker">{language === "fr" ? "Question suivante" : "Next question"}</span>
+              <strong>{questions.questions[0].text}</strong>
+              <div className="question-options">
+                {questions.questions[0].options.map((option) => (
+                  <button
+                    key={option}
+                    onClick={() => void answerQuestion(questions.questions[0].id, option)}
+                    disabled={isAnalyzing}
+                  >
+                    {option}
+                  </button>
+                ))}
               </div>
-            ))}
+            </div>
           </div>
         )}
         {spec && (

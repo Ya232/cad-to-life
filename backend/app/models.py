@@ -62,7 +62,7 @@ class ClarificationQuestion(BaseModel):
 
 class AnalyzeNeedsClarification(BaseModel):
     status: Literal["needs_clarification"]
-    questions: list[ClarificationQuestion] = Field(min_length=1, max_length=8)
+    questions: list[ClarificationQuestion] = Field(min_length=1, max_length=1)
 
 
 class AnalyzeReady(BaseModel):

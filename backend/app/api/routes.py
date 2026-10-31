@@ -90,6 +90,9 @@ If a critical choice is missing, return:
 Questions must be in LANGUAGE and have 2 to 4 short options.
 Ask about the exact board/model, mounting method, or required accessible ports
 when necessary.
+Ask exactly one question at a time. After the user answers, use the answer
+and ask the next single most important missing question. Continue until the
+specification is complete, then return ready.
 
 Otherwise return:
 {"status":"ready","spec":{"part_type":"enclosure|bracket|mounting_plate|spacer",
@@ -107,6 +110,9 @@ Respond with JSON only. No markdown and no explanation.
     try:
         payload = meta_client.chat_json(system, user, project_id=project_id)
         if payload.get("status") == "needs_clarification":
+            questions = payload.get("questions")
+            if isinstance(questions, list) and len(questions) > 1:
+                payload = {**payload, "questions": questions[:1]}
             return AnalyzeNeedsClarification.model_validate(payload)
         if payload.get("status") == "ready":
             ready = AnalyzeReady.model_validate(payload)
