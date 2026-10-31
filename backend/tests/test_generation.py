@@ -1,5 +1,6 @@
 from pathlib import Path
 
+import trimesh
 from fastapi.testclient import TestClient
 
 from app.main import app
@@ -36,3 +37,58 @@ def test_generate_enclosure_and_download() -> None:
     assert body["bounding_box_mm"] == [84.0, 54.0, 32.0]
     assert Path("output/test-enclosure/design.stl").is_file()
     assert client.get("/api/projects/test-enclosure/stl").status_code == 200
+
+
+def test_generate_spacer_has_a_real_inner_hole() -> None:
+    client = TestClient(app)
+    response = client.post(
+        "/api/designs/generate",
+        json={
+            "project_id": "test-spacer",
+            "spec": {
+                "part_type": "spacer",
+                "name": "Test spacer",
+                "components": [],
+                "constraints": {},
+                "parameters": {
+                    "outer_diameter_mm": 12,
+                    "inner_diameter_mm": 4,
+                    "height_mm": 10,
+                },
+                "language": "en",
+            },
+        },
+    )
+    assert response.status_code == 200
+    mesh = trimesh.load("output/test-spacer/design.stl")
+    assert mesh.is_watertight
+    assert mesh.bounding_box.extents.tolist() == [12.0, 12.0, 10.0]
+    radial_distances = (mesh.vertices[:, :2] ** 2).sum(axis=1) ** 0.5
+    assert radial_distances.min() >= 1.99
+
+
+def test_generation_rejects_max_size_smaller_than_component() -> None:
+    client = TestClient(app)
+    response = client.post(
+        "/api/designs/generate",
+        json={
+            "project_id": "test-too-small",
+            "spec": {
+                "part_type": "enclosure",
+                "name": "Too small",
+                "components": [
+                    {
+                        "query": "ESP32",
+                        "library_id": "esp32-devkitc-v4-example",
+                        "confidence": 1,
+                    }
+                ],
+                "constraints": {
+                    "max_size_mm": [20, 20, 20],
+                },
+                "parameters": {},
+                "language": "en",
+            },
+        },
+    )
+    assert response.status_code == 422

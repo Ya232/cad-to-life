@@ -62,7 +62,11 @@ def _enclosure(spec: DesignSpec) -> tuple[list[trimesh.Trimesh], dict[str, float
         inner_x, inner_y, inner_z = 80.0, 50.0, 30.0
     if spec.constraints.max_size_mm:
         max_x, max_y, max_z = spec.constraints.max_size_mm
-        inner_x, inner_y, inner_z = min(inner_x, max_x), min(inner_y, max_y), min(inner_z, max_z)
+        required_outer = (inner_x + 2 * wall, inner_y + 2 * wall, inner_z + floor)
+        if any(required > limit for required, limit in zip(required_outer, spec.constraints.max_size_mm)):
+            raise ValueError(
+                "max_size_mm is too small for the requested components and clearances."
+            )
 
     outer = (inner_x + 2 * wall, inner_y + 2 * wall, inner_z + floor)
     height = outer[2]
@@ -87,7 +91,12 @@ def _simple_part(spec: DesignSpec) -> tuple[list[trimesh.Trimesh], dict[str, flo
         inner_d = float(spec.parameters.get("inner_diameter_mm", 4.0))
         if not 2 <= inner_d < outer_d <= 200 or not 1 <= height <= 200:
             raise ValueError("Spacer parameters are out of range.")
-        mesh = trimesh.creation.cylinder(radius=outer_d / 2, height=height, sections=48)
+        mesh = trimesh.creation.annulus(
+            r_min=inner_d / 2,
+            r_max=outer_d / 2,
+            height=height,
+            sections=48,
+        )
         return [mesh], {"outer_diameter_mm": outer_d, "inner_diameter_mm": inner_d, "height_mm": height}, (outer_d, outer_d, height)
 
     width = float(spec.parameters.get("width_mm", 80.0))
@@ -109,14 +118,24 @@ def generate_part(spec: DesignSpec, project_id: str | None = None) -> GeneratedP
     else:
         meshes, parameters, bounds = _simple_part(spec)
     combined = trimesh.util.concatenate(meshes)
+    actual_bounds = tuple(float(value) for value in combined.bounding_box.extents)
+    if not combined.is_watertight:
+        raise ValueError("Generated geometry is not watertight.")
+    if any(abs(actual - expected) > 0.01 for actual, expected in zip(actual_bounds, bounds)):
+        raise ValueError("Generated geometry bounds do not match the requested parameters.")
     output_dir = OUTPUT_ROOT / project_id
     output_dir.mkdir(parents=True, exist_ok=True)
     path = output_dir / "design.stl"
     combined.export(path)
+    warnings = _component_warnings(spec)
+    if spec.part_type == PartType.enclosure and spec.constraints.usb_access:
+        warnings.append("USB access is requested but port cutouts are not implemented yet.")
+    if spec.part_type == PartType.enclosure and spec.constraints.waterproof:
+        warnings.append("Waterproofing is requested but the current enclosure is open-top.")
     return GeneratedPart(
         project_id=project_id,
         path=path,
         bounding_box_mm=tuple(float(value) for value in bounds),
         parameters_used=parameters,
-        warnings=_component_warnings(spec),
+        warnings=warnings,
     )
