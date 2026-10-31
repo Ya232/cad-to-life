@@ -104,8 +104,17 @@ export function ChatPanel({
       <div className="chat-heading">
         <div className="assistant-avatar">✦</div>
         <div>
-          <strong>{copy.assistantName}</strong>
-          <span>● {language === "fr" ? "Prêt à analyser" : "Ready to analyse"}</span>
+          <div className="assistant-title-row">
+            <strong>{copy.assistantName}</strong>
+            <span className={`connection-badge ${apiUrl ? "connected" : "offline"}`}>
+              <i />{apiUrl ? (language === "fr" ? "En ligne" : "Online") : (language === "fr" ? "Hors ligne" : "Offline")}
+            </span>
+          </div>
+          <span className="assistant-subtitle">
+            {isAnalyzing
+              ? (language === "fr" ? "Travail en cours..." : "Working...")
+              : (language === "fr" ? "Analyse paramétrique et génération 3D" : "Parametric analysis and 3D generation")}
+          </span>
         </div>
       </div>
       <div className="messages">
@@ -140,28 +149,39 @@ export function ChatPanel({
         )}
         {spec && (
           <article className="spec-card">
-            <strong>{copy.readyTitle}: {spec.spec.name}</strong>
-            <p>{spec.spec.part_type}</p>
-            <strong>{copy.components}</strong>
-            <ul>
-              {spec.spec.components.map((component) => (
-                <li key={component.query}>{component.query}</li>
-              ))}
-            </ul>
-            <strong>{copy.constraints}</strong>
-            <p>{spec.spec.constraints.notes || spec.spec.constraints.mounting}</p>
+            <div className="card-title-row">
+              <div>
+                <span className="card-kicker">{language === "fr" ? "Analyse terminée" : "Analysis complete"}</span>
+                <strong>{spec.spec.name}</strong>
+              </div>
+              <span className="spec-type">{spec.spec.part_type}</span>
+            </div>
+            <div className="spec-grid">
+              <div><span>{copy.components}</span><strong>{spec.spec.components.length || "—"}</strong></div>
+              <div><span>{copy.constraints}</span><strong>{spec.spec.constraints.mounting}</strong></div>
+            </div>
+            {spec.spec.components.length > 0 && (
+              <ul>
+                {spec.spec.components.map((component) => <li key={component.query}>{component.query}</li>)}
+              </ul>
+            )}
+            {spec.spec.constraints.notes && <p>{spec.spec.constraints.notes}</p>}
             <button className="primary" onClick={() => void generate()} disabled={isAnalyzing || !apiUrl}>
-              {language === "fr" ? "Générer le STL" : "Generate STL"}
+              <span>{language === "fr" ? "Générer le STL" : "Generate STL"}</span><span>↗</span>
             </button>
           </article>
         )}
         {generated && (
           <article className="spec-card">
-            <strong>{language === "fr" ? "STL généré" : "STL generated"}</strong>
+            <div className="card-title-row">
+              <div>
+                <span className="card-kicker">{language === "fr" ? "Conception prête" : "Design ready"}</span>
+                <strong>{language === "fr" ? "STL généré" : "STL generated"}</strong>
+              </div>
+              <span className="result-check">✓</span>
+            </div>
             {apiUrl && <StlViewer url={`${apiUrl}${generated.files.stl_url}`} />}
-            <p>
-              {generated.bounding_box_mm.join(" × ")} mm
-            </p>
+            <div className="dimension-pill"><span>{language === "fr" ? "Dimensions" : "Dimensions"}</span>{generated.bounding_box_mm.join(" × ")} mm</div>
             {generated.warnings.map((warning) => <p className="status" key={warning}>{warning}</p>)}
             <a
               className="primary download-link"

@@ -70,7 +70,12 @@ h2 { font-size: 28px; letter-spacing: -.04em; }
 .assistant-avatar, .message-avatar { display: grid; place-items: center; flex: 0 0 auto; border-radius: 50%; background: linear-gradient(180deg, #101827 0%, #1f2937 100%); color: var(--accent); }
 .assistant-avatar { width: 36px; height: 36px; }
 .chat-heading strong, .chat-heading span { display: block; }
-.chat-heading span { color: #63823b; font-size: 12px; margin-top: 4px; }
+.assistant-title-row { display: flex; align-items: center; gap: 10px; }
+.assistant-subtitle { color: var(--muted); font-size: 12px; margin-top: 5px; }
+.connection-badge { display: inline-flex; align-items: center; gap: 5px; padding: 4px 8px; border-radius: 999px; font-size: 10px; font-weight: 700; margin: 0; }
+.connection-badge i { width: 6px; height: 6px; border-radius: 50%; background: currentColor; }
+.connection-badge.connected { color: #4f7e28; background: #edf7df; }
+.connection-badge.offline { color: #a35b22; background: #fff3df; }
 .messages { flex: 1; min-height: 0; overflow-y: auto; padding: 30px clamp(18px, 5vw, 56px) 18px; background: linear-gradient(180deg, rgba(240,246,255,0.72) 0%, rgba(255,255,255,0.22) 100%); scrollbar-color: #cbd5e1 transparent; }
 .message { display: flex; gap: 10px; max-width: 90%; margin-bottom: 20px; }
 .message p { margin: 0; padding: 14px 17px; border-radius: 17px; line-height: 1.55; font-size: 14px; }
@@ -126,15 +131,26 @@ h2 { font-size: 28px; letter-spacing: -.04em; }
 .orbit-two { width: 470px; height: 190px; transform: rotate(38deg); }
 .visual-label { position: absolute; left: 28px; bottom: 24px; font-size: 11px; font-weight: 700; letter-spacing: .16em; }
 .global-error { position: fixed; right: 24px; bottom: 20px; z-index: 3; max-width: 420px; padding: 12px 16px; border-radius: 12px; background: #fff4f2; border: 1px solid #f1c7c2; }
-.question-card, .spec-card { max-width: 620px; margin: 8px 0 20px 35px; padding: 18px; border: 1px solid rgba(148,163,184,.28); border-radius: 18px; background: rgba(255,255,255,0.92); box-shadow: 0 12px 26px rgba(15,23,42,.06); }
+.question-card, .spec-card { max-width: 680px; margin: 8px 0 20px 35px; padding: 20px; border: 1px solid rgba(148,163,184,.28); border-radius: 20px; background: rgba(255,255,255,0.94); box-shadow: 0 14px 30px rgba(15,23,42,.07); }
 .question-block { display: grid; gap: 10px; }
 .question-block + .question-block { margin-top: 16px; }
 .question-kicker { color: #63823b; font-size: 11px; font-weight: 700; letter-spacing: .08em; text-transform: uppercase; }
 .question-options { display: flex; flex-wrap: wrap; gap: 8px; }
 .question-options button { border: 1px solid var(--line); border-radius: 999px; background: white; padding: 8px 12px; color: var(--ink); cursor: pointer; }
 .question-options button:hover { border-color: var(--accent-strong); background: #f5fbdc; }
-.spec-card { display: grid; gap: 9px; }
-.spec-card > strong:first-child { font-size: 16px; letter-spacing: -.02em; }
+.spec-card { display: grid; gap: 12px; }
+.card-title-row { display: flex; align-items: start; justify-content: space-between; gap: 12px; }
+.card-title-row > div { display: grid; gap: 4px; }
+.card-title-row strong { font-size: 17px; letter-spacing: -.02em; }
+.card-kicker, .question-kicker { color: #63823b; font-size: 10px; font-weight: 800; letter-spacing: .1em; text-transform: uppercase; }
+.spec-type { color: var(--muted); font-size: 11px; background: #f1f5f9; border-radius: 999px; padding: 6px 9px; }
+.spec-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 8px; }
+.spec-grid div { display: grid; gap: 4px; padding: 10px 12px; border-radius: 12px; background: #f5f8fb; }
+.spec-grid span { color: var(--muted); font-size: 11px; }
+.spec-grid strong { font-size: 13px; }
+.result-check { display: grid; place-items: center; width: 28px; height: 28px; border-radius: 50%; color: #4f7e28; background: #e7f5d5; font-weight: 800; }
+.dimension-pill { display: inline-flex; align-items: center; gap: 8px; width: fit-content; padding: 7px 10px; border-radius: 999px; background: #f1f5f9; color: var(--ink); font-size: 12px; font-weight: 700; }
+.dimension-pill span { color: var(--muted); font-size: 10px; text-transform: uppercase; letter-spacing: .08em; }
 .spec-card p { margin: 0; color: var(--muted); }
 .spec-card ul { margin: 0 0 4px; padding-left: 20px; color: var(--muted); }
 .spec-card .primary { cursor: not-allowed; opacity: .6; }
