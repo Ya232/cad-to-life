@@ -58,9 +58,11 @@ export function ChatPanel({
       }
     } catch (error) {
       const text =
-        error instanceof Error && error.message === "meta_not_connected"
-          ? copy.notConnected
-          : copy.backendUnavailable;
+        error instanceof Error && error.name === "meta_not_connected"
+          ? error.message
+          : error instanceof Error && error.message !== "analysis_failed"
+            ? error.message
+            : copy.backendUnavailable;
       setMessages((current) => [...current, { role: "assistant", text }]);
       onError(text);
     } finally {

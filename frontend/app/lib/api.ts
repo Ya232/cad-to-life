@@ -99,15 +99,37 @@ export async function analyzeDesign(
   language: "fr" | "en",
   answers: Record<string, string> | null = null,
 ): Promise<AnalyzeResponse> {
-  const response = await fetch(`${baseUrl}/api/designs/analyze`, {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ description, language, answers }),
-  });
-  if (response.status === 404 || response.status === 503) {
-    throw new Error("meta_not_connected");
+  const request = () =>
+    fetch(`${baseUrl}/api/designs/analyze`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ description, language, answers }),
+    });
+  let response = await request();
+  if (response.status === 503) {
+    const alternate = await detectApiBaseUrl();
+    if (alternate && alternate !== baseUrl) {
+      response = await fetch(`${alternate}/api/designs/analyze`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ description, language, answers }),
+      });
+    }
   }
-  if (!response.ok) throw new Error("analysis_failed");
+  if (!response.ok) {
+    let detail = "";
+    try {
+      const payload = (await response.json()) as { detail?: string };
+      detail = payload.detail ?? "";
+    } catch {
+      detail = "";
+    }
+    const error = new Error(detail || "analysis_failed");
+    error.name = response.status === 503 || response.status === 404
+      ? "meta_not_connected"
+      : "analysis_failed";
+    throw error;
+  }
   return (await response.json()) as AnalyzeResponse;
 }
 
