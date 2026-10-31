@@ -43,7 +43,7 @@ class MetaClient:
         user: str,
         *,
         project_id: str,
-        max_tokens: int = 1200,
+        max_tokens: int = 1600,
     ) -> dict[str, Any]:
         cache_key = hashlib.sha256(
             json.dumps(
@@ -58,13 +58,13 @@ class MetaClient:
 
         client = self._client()
         validation_error = ""
-        for attempt in range(2):
+        for attempt in range(3):
             prompt = user
             if validation_error:
                 prompt = (
                     f"{user}\n\nYour previous response was invalid JSON: "
                     f"{validation_error}. Return one concise JSON object only. "
-                    "Ask at most one question and do not include markdown."
+                    "Ask at most one question. Return compact JSON without markdown."
                 )
             started = time.perf_counter()
             self._calls[project_id] += 1
@@ -96,8 +96,13 @@ class MetaClient:
                 return parsed
             except (json.JSONDecodeError, TypeError, ValueError) as exc:
                 validation_error = str(exc)
-                if attempt == 1:
-                    raise MetaClientError("Meta returned invalid JSON twice.") from exc
+                logger.warning(
+                    "Meta JSON parse attempt failed attempt=%s reason=%s",
+                    attempt + 1,
+                    validation_error,
+                )
+                if attempt == 2:
+                    raise MetaClientError("Meta returned invalid JSON after three attempts.") from exc
             except Exception as exc:
                 raise MetaClientError("Meta Model API request failed.") from exc
         raise MetaClientError("Meta Model API request failed.")
@@ -105,17 +110,44 @@ class MetaClient:
     @staticmethod
     def _parse_json(content: str) -> dict[str, Any]:
         cleaned = content.strip()
+        if not cleaned:
+            raise ValueError("The Meta response was empty.")
         if cleaned.startswith("```"):
             cleaned = cleaned.split("\n", 1)[-1]
             cleaned = cleaned.rsplit("```", 1)[0].strip()
         try:
             parsed = json.loads(cleaned)
         except json.JSONDecodeError:
-            start = cleaned.find("{")
-            end = cleaned.rfind("}")
-            if start < 0 or end <= start:
+            parsed = None
+            for start, character in enumerate(cleaned):
+                if character != "{":
+                    continue
+                depth = 0
+                in_string = False
+                escaped = False
+                for index in range(start, len(cleaned)):
+                    current = cleaned[index]
+                    if in_string:
+                        if escaped:
+                            escaped = False
+                        elif current == "\\":
+                            escaped = True
+                        elif current == '"':
+                            in_string = False
+                        continue
+                    if current == '"':
+                        in_string = True
+                    elif current == "{":
+                        depth += 1
+                    elif current == "}":
+                        depth -= 1
+                        if depth == 0:
+                            parsed = json.loads(cleaned[start : index + 1])
+                            break
+                if parsed is not None:
+                    break
+            if parsed is None:
                 raise
-            parsed = json.loads(cleaned[start : end + 1])
         if not isinstance(parsed, dict):
             raise ValueError("The response must be a JSON object.")
         return parsed
