@@ -25,6 +25,7 @@ export default function Home() {
         setError(labels[language].backendUnavailable);
         return;
       }
+      setError("");
       try {
         setProjects(await getProjects(baseUrl));
       } catch {
