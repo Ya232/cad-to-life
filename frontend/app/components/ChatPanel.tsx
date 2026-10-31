@@ -25,10 +25,14 @@ export function ChatPanel({
   const [generated, setGenerated] = useState<GenerateResult | null>(null);
   const [workingMode, setWorkingMode] = useState<"analysis" | "generation" | null>(null);
 
-  async function sendMessage(text: string, nextAnswers: Record<string, string> | null = null) {
+  async function sendMessage(
+    text: string,
+    nextAnswers: Record<string, string> | null = null,
+    displayText = text,
+  ) {
     const trimmed = text.trim();
     if (!trimmed || isAnalyzing) return;
-    setMessages((current) => [...current, { role: "user", text: trimmed }]);
+    setMessages((current) => [...current, { role: "user", text: displayText.trim() }]);
     setMessage("");
     setIsAnalyzing(true);
     setWorkingMode("analysis");
@@ -68,7 +72,7 @@ export function ChatPanel({
     const nextAnswers = { ...answers, [questionId]: option };
     setAnswers(nextAnswers);
     if (lastDescription) {
-      await sendMessage(lastDescription, nextAnswers);
+      await sendMessage(lastDescription, nextAnswers, option);
     }
   }
 
