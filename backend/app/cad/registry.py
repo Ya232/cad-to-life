@@ -86,6 +86,50 @@ def _front_wall(
     return pieces
 
 
+def _component_supports(
+    components: list[Component],
+    outer: tuple[float, float, float],
+    wall: float,
+    floor: float,
+    clearance: float,
+) -> tuple[list[trimesh.Trimesh], int, bool]:
+    supports: list[trimesh.Trimesh] = []
+    estimated = False
+    y_cursor = wall + clearance
+    support_height = min(3.0, max(1.0, outer[2] - floor - 4.0))
+    for component in components:
+        length = component.dimensions_mm.length
+        width = component.dimensions_mm.width
+        origin_x = wall + clearance
+        origin_y = y_cursor
+        if component.mounting_holes:
+            for hole in component.mounting_holes:
+                supports.append(
+                    trimesh.creation.annulus(
+                        r_min=max(0.5, hole.diameter / 2),
+                        r_max=hole.diameter / 2 + 1.5,
+                        height=support_height,
+                        sections=32,
+                    )
+                )
+                supports[-1].apply_translation(
+                    (origin_x + hole.x, origin_y + hole.y, floor + support_height / 2)
+                )
+        else:
+            estimated = True
+            pad_size = 5.0
+            for x in (origin_x + 1.0, origin_x + length - pad_size - 1.0):
+                for y in (origin_y + 1.0, origin_y + width - pad_size - 1.0):
+                    supports.append(
+                        _box(
+                            (pad_size, pad_size, support_height),
+                            (x + pad_size / 2, y + pad_size / 2, floor + support_height / 2),
+                        )
+                    )
+        y_cursor += width + 2 * clearance
+    return supports, len(supports), estimated
+
+
 def _enclosure(spec: DesignSpec) -> tuple[list[trimesh.Trimesh], dict[str, float], tuple[float, float, float]]:
     wall = float(spec.parameters.get("wall_thickness_mm", 2.0))
     floor = float(spec.parameters.get("floor_thickness_mm", 2.0))
@@ -124,6 +168,9 @@ def _enclosure(spec: DesignSpec) -> tuple[list[trimesh.Trimesh], dict[str, float
         ),
         None,
     )
+    supports, support_count, estimated_supports = _component_supports(
+        components, outer, wall, floor, clearance
+    )
     meshes = [
         _box((outer[0], outer[1], floor), (outer[0] / 2, outer[1] / 2, floor / 2)),
         _box((wall, outer[1], height - floor), (wall / 2, outer[1] / 2, floor + (height - floor) / 2)),
@@ -136,6 +183,7 @@ def _enclosure(spec: DesignSpec) -> tuple[list[trimesh.Trimesh], dict[str, float
             usb_port.height_mm if spec.constraints.usb_access and usb_port else None,
         ),
         _box((outer[0] - 2 * wall, wall, height - floor), (outer[0] / 2, outer[1] - wall / 2, floor + (height - floor) / 2)),
+        *supports,
     ]
     parameters = {
         "wall_thickness_mm": wall,
@@ -145,6 +193,9 @@ def _enclosure(spec: DesignSpec) -> tuple[list[trimesh.Trimesh], dict[str, float
     if usb_port and spec.constraints.usb_access:
         parameters["usb_cutout_width_mm"] = min(usb_port.width_mm + 2.0, outer[0] - 4 * wall)
         parameters["usb_cutout_height_mm"] = min(usb_port.height_mm + 2.0, height - floor - 2 * wall)
+    if components:
+        parameters["component_support_count"] = float(support_count)
+        parameters["component_support_height_mm"] = min(3.0, max(1.0, height - floor - 4.0))
     return meshes, parameters, outer
 
 
@@ -204,6 +255,14 @@ def generate_part(spec: DesignSpec, project_id: str | None = None) -> GeneratedP
         )
         if not has_usb_port:
             warnings.append("USB access was requested but no USB port is available in the component library.")
+    if spec.part_type == PartType.enclosure and spec.components:
+        if any(
+            component_store.get(reference.library_id)
+            and not component_store.get(reference.library_id).mounting_holes
+            for reference in spec.components
+            if reference.library_id
+        ):
+            warnings.append("Some component supports are estimated because mounting-hole data is unavailable.")
     if spec.part_type == PartType.enclosure and spec.constraints.waterproof:
         warnings.append("Waterproofing is requested but the current enclosure is open-top.")
     return GeneratedPart(
